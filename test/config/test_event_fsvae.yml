@@ -1,0 +1,18 @@
+Network:
+  epochs: 50
+  batch_size: 32
+  n_steps: 16 # timestep
+  # dataset: "MNIST"
+  in_channels: 1
+  data_path: "./data"
+  lr: 0.001
+  # n_class: 10
+  latent_dim: 8
+  input_size: 32
+  model: "FSVAE" # FSVAE or  FSVAE_large
+  k: 20 # multiplier of channel
+  scheduled: true # whether to apply scheduled sampling
+  loss_func: 'van_rossum' # van_rossum (or mmd or kld)
+
+
+  
