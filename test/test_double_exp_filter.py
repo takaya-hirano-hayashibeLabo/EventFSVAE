@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 class DoubleExponentialSynapse:
-    def __init__(self, N, dt=1e-4, td=1e-2, tr=5e-3):
+    def __init__(self, N, dt=4e-3, td=2e-2, tr=5e-3):
         self.N = N
         self.dt = dt
         self.td = td

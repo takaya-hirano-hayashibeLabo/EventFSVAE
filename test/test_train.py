@@ -107,7 +107,7 @@ def main():
     input=np.array([
         [[
         np.where(((x-M/2)**2+(y-N/2)**2)<(M/3)**2,
-                 np.where(np.random.uniform(0,1,x.shape)>0.85,1,0)
+                 np.where(np.random.uniform(0,1,x.shape)>0.5,1,0)
                  ,0)
         for x,y in zip(xx,yy)
         ]

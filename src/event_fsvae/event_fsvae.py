@@ -9,11 +9,13 @@ import torch.nn.functional as F
 from .. import global_v as glv
 
 
-def double_exp_filter(event:torch.Tensor, dt=1e-4, td=1e-2, tr=5e-3):
+def double_exp_filter(event:torch.Tensor, dt=4e-3, td=1e-2, tr=5e-3):
     """
     van rossum距離\n
     スパイクを２重指数関数フィルターをかけることで距離を計算する
     :param event : (N x C x event_dim x event_dim x T)
+    
+    他のハイパラに関しては, test/readme.md test_double_exp_filter項を参照
     """
     batch,channel,dim,_,T=event.shape
     r=torch.zeros(size=(batch,channel,dim,dim,T))
@@ -97,26 +99,6 @@ class EventFSVAE(nn.Module):
             )
         self.decoder = nn.Sequential(*modules)
         
-        #>> 出力をスパイク値にしてみる >>
-        # self.final_layer = nn.Sequential(
-        #                     tdConvTranspose(hidden_dims[-1],
-        #                                     hidden_dims[-1],
-        #                                     kernel_size=3,
-        #                                     stride=2,
-        #                                     padding=1,
-        #                                     output_padding=1,
-        #                                     bias=True,
-        #                                     bn=tdBatchNorm(hidden_dims[-1]),
-        #                                     spike=LIFSpike()),
-        #                     tdConvTranspose(hidden_dims[-1], 
-        #                                     out_channels=glv.network_config['in_channels'],
-        #                                     kernel_size=3, 
-        #                                     padding=1,
-        #                                     bias=True,
-        #                                     bn=None,
-        #                                     spike=LIFSpike())
-        # )
-        #>> 出力をスパイク値にしてみる >>
         
         #>> event-based dataの＋１を出力するレイヤー >>
         self.positive_layer= nn.Sequential(
@@ -187,8 +169,8 @@ class EventFSVAE(nn.Module):
         
         # >> event-basedデータの+1と-1を計算 >>
         out_positive=self.positive_layer(result) #0 or +1
-        out_negetive=self.negative_layer(result) #0 or -1
-        out=out_positive-out_negetive
+        out_negetive=-self.negative_layer(result) #0 or -1
+        out=out_positive+out_negetive
         # >> event-basedデータの+1と-1を計算 >>
         
         return out
