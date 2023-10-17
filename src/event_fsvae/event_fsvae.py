@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from .. import global_v as glv
 
 
-def double_exp_filter(event:torch.Tensor, dt=0.05, td=20, tr=2):
+def double_exp_filter(event:torch.Tensor, dt=1e-4, td=1e-2, tr=5e-3):
     """
     van rossum距離\n
     スパイクを２重指数関数フィルターをかけることで距離を計算する
