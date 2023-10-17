@@ -1,5 +1,5 @@
 Network:
-  epochs: 50
+  epochs: 400
   batch_size: 32
   n_steps: 16 # timestep
   # dataset: "MNIST"

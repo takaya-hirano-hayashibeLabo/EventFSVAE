@@ -22,10 +22,10 @@ def double_exp_filter(event:torch.Tensor, dt=0.05, td=20, tr=2):
     for t in range(T):
         if t==0:
             r[:,:,:,:,t]=r[:,:,:,:,t]*(1-dt/tr)+hr[:,:,:,:,t]*dt
-            hr[:,:,:,:,t]=hr[:,:,:,:,t]*(1-dt/td)+event[:,:,:,:,t]/(tr*td)
+            hr[:,:,:,:,t]=hr[:,:,:,:,t]*(1-dt/td)+(event[:,:,:,:,t])/(tr*td)
         elif t>0:
             r[:,:,:,:,t]=r[:,:,:,:,t-1]*(1-dt/tr)+hr[:,:,:,:,t-1]*dt
-            hr[:,:,:,:,t]=hr[:,:,:,:,t-1]*(1-dt/td)+event[:,:,:,:,t]/(tr*td)
+            hr[:,:,:,:,t]=hr[:,:,:,:,t-1]*(1-dt/td)+(event[:,:,:,:,t])/(tr*td)
             
     return r
 
@@ -96,8 +96,8 @@ class EventFSVAE(nn.Module):
                                     spike=LIFSpike())
             )
         self.decoder = nn.Sequential(*modules)
-
-        #>> 論文の式 出力をスパイクではなく膜電位にしてる >>
+        
+        #>> 出力をスパイク値にしてみる >>
         # self.final_layer = nn.Sequential(
         #                     tdConvTranspose(hidden_dims[-1],
         #                                     hidden_dims[-1],
@@ -114,12 +114,12 @@ class EventFSVAE(nn.Module):
         #                                     padding=1,
         #                                     bias=True,
         #                                     bn=None,
-        #                                     spike=None)
+        #                                     spike=LIFSpike())
         # )
-        #>> 論文の式 出力をスパイクではなく膜電位にしてる >>
-        
         #>> 出力をスパイク値にしてみる >>
-        self.final_layer = nn.Sequential(
+        
+        #>> event-based dataの＋１を出力するレイヤー >>
+        self.positive_layer= nn.Sequential(
                             tdConvTranspose(hidden_dims[-1],
                                             hidden_dims[-1],
                                             kernel_size=3,
@@ -137,7 +137,28 @@ class EventFSVAE(nn.Module):
                                             bn=None,
                                             spike=LIFSpike())
         )
-        #>> 出力をスパイク値にしてみる >>
+        #>> event-based dataの＋１を出力するレイヤー >>
+        
+        #>> event-based dataのー１を出力するレイヤー >>
+        self.negative_layer= nn.Sequential(
+                            tdConvTranspose(hidden_dims[-1],
+                                            hidden_dims[-1],
+                                            kernel_size=3,
+                                            stride=2,
+                                            padding=1,
+                                            output_padding=1,
+                                            bias=True,
+                                            bn=tdBatchNorm(hidden_dims[-1]),
+                                            spike=LIFSpike()),
+                            tdConvTranspose(hidden_dims[-1], 
+                                            out_channels=glv.network_config['in_channels'],
+                                            kernel_size=3, 
+                                            padding=1,
+                                            bias=True,
+                                            bn=None,
+                                            spike=LIFSpike())
+        )
+        #>> event-based dataのー１を出力するレイヤー >>
 
         self.p = 0
 
@@ -162,9 +183,13 @@ class EventFSVAE(nn.Module):
         result = result.view(result.shape[0], self.hidden_dims[-1], 2, 2, self.n_steps) # (N,C,H,W,T)
         
         result = self.decoder(result)# (N,C,H,W,T)
-        out = self.final_layer(result)# (N,C,H,W,T)
-        # print(f"result_dim{result.shape}")
-        # print(f"out_dim{out.shape}")
+        # out = self.final_layer(result)# (N,C,H,W,T)
+        
+        # >> event-basedデータの+1と-1を計算 >>
+        out_positive=self.positive_layer(result) #0 or +1
+        out_negetive=self.negative_layer(result) #0 or -1
+        out=out_positive-out_negetive
+        # >> event-basedデータの+1と-1を計算 >>
         
         return out
 

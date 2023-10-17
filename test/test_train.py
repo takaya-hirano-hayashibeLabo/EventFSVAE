@@ -1,4 +1,5 @@
 """
+出力は0,1までのときに作成した.(-1はまだできないとき)
 一番シンプルな入出力関係を学習するプログラム
 あとはlossを小さくすれば学習できるはず
 """
@@ -18,6 +19,7 @@ from torch.utils.data.dataloader import DataLoader
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import ArtistAnimation as arani
+from matplotlib.colors import Normalize
 import pandas as pd
 
 from src.network_parser import parse
@@ -157,6 +159,8 @@ def main():
             loss.to_csv(f"{result_path}/fsvae_test_loss.csv",index=False)
             
         torch.save(net.to(DEVICE).state_dict(), f'{result_path}/test_train.pth')
+    else:
+        net.load_state_dict(torch.load(f"{PARENT}/test_train/test_train.pth"))
     #>> 学習 >>
     
     
@@ -182,9 +186,9 @@ def main():
     ims=[]
     for t in range(T):
         ims+=[
-            [ax[0].imshow(input[0][t],cmap="gray"),
-            ax[1].imshow(x_pre_trained_np[0,0,:,:,t],cmap="gray"),
-            ax[2].imshow(x_recon_np[0,0,:,:,t],cmap="gray")]
+            [ax[0].imshow(input[0][t],cmap="gray",norm=Normalize(vmin=-1,vmax=1)),
+            ax[1].imshow(x_pre_trained_np[0,0,:,:,t],cmap="gray",norm=Normalize(vmin=-1,vmax=1)),
+            ax[2].imshow(x_recon_np[0,0,:,:,t],cmap="gray",norm=Normalize(vmin=-1,vmax=1))]
                 ]
     ani=arani(fig,artists=ims,interval=100)
     ani.save(f"{PARENT}/test_train/in_trained_view.gif")
